@@ -337,23 +337,27 @@ const styles = StyleSheet.create({
     },
     cancelButton: {
       backgroundColor: 'gray',
-    },
-    optionsContainer: {
-      marginVertical: 10,
-      width: '100%',
-    },
-    optionButton: {
-      padding: 15,
-      backgroundColor: 'lightgray',
-      borderRadius: 5,
-      marginVertical: 5,
-    },
-    optionButtonText: {
-      textAlign: 'center',
-    },
-    selectedOptionButton: {
-      backgroundColor: '#48C78E', // Verde para selección
-    },
+    },optionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginVertical: 20,
+        flexWrap: 'wrap', // Permitir que los botones se ajusten a múltiples líneas
+      },
+      optionButton: {
+        backgroundColor: '#e0e0e0',
+        borderRadius: 15,
+        paddingVertical: 5, // Ajusta la altura
+        paddingHorizontal: 10, // Ajusta el ancho
+        margin: 5, // Espacio entre botones
+      },
+      optionButtonText: {
+        color: 'white',
+        fontSize: 14, // Tamaño del texto del botón
+      },
+      selectedOptionButton: {
+        backgroundColor: 'green', // Color de fondo para la opción seleccionada
+      },
+      
     disabledButton: {
       backgroundColor: '#ccc', // Gris para botón deshabilitado
     },
