@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Modal, StyleSheet, Switch } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 interface Routine {
   id: number;
   name: string;
   description: string;
   completed: boolean;
-  repeatDays?: string; // Campo opcional para los días de repetición
+  repeatDays?: string; 
+  selectedTime?: string;
   sendNotification?: boolean;
 }
 
@@ -19,14 +21,20 @@ const Rutinas = () => {
   const [activitySelectionVisible, setActivitySelectionVisible] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null); // Para modificación
+  //repetir
   const [repeatDays, setRepeatDays] = useState<string>('Solo una vez');    
+  //notificación
   const [sendNotification, setSendNotification] = useState<boolean>(false); // Nuevo estado para notificaciones
+  //Fecha actual
   const [currentDate, setCurrentDate] = useState<string>(''); // Nuevo estado para la fecha actual
   const [showDaysOptions, setShowDaysOptions] = useState(false);
+  //Hora
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false); // Estado para el picker de fecha y hora
+  const [selectedTime, setSelectedTime] = useState<string>("");// Estado para la hora seleccionada
 
   const handleInputChange = (text: string, field: 'name' | 'description') => {
-    // Expresión regular para permitir solo letras y números, incluyendo caracteres acentuados y Ñ
-    const regex = /^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ]*$/;
+    // Expresión regular para permitir solo letras y números etc.
+    const regex = /^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ ]*$/;
     if (regex.test(text) || text === '') {
       if (field === 'name') {
         setNewRoutine(text);
@@ -38,6 +46,8 @@ const Rutinas = () => {
 
   
 
+
+  
 
   const options = [
     'Salir a correr', 
@@ -78,23 +88,35 @@ const Rutinas = () => {
         name: newRoutine,
         description: newRoutineDescription,
         repeatDays,
+        selectedTime: selectedTime,
         sendNotification,
         completed: false,
       };
   
       if (selectedRoutine) {
-        // Modificar rutina existente
-        setRoutines(
-          routines.map((routine) =>
-            routine.id === selectedRoutine.id ? { ...routineData } : routine
-          )
-        );
+        // Actualiza la rutina existente
+        setRoutines(routines.map(r => (r.id === routineData.id ? routineData : r)));
       } else {
-        // Agregar nueva rutina
+        // Agrega una nueva rutina
         setRoutines([...routines, routineData]);
       }
-      resetModal();
+
+      resetModal(); // Reinicia el modal después de agregar o editar
     }
+  };
+
+  const handleConfirm = (date: Date) => {
+    const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setSelectedTime(formattedTime); // Actualiza con la hora seleccionada
+    hideDatePicker(); // Cierra el picker
+};
+
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
   };
   
 
@@ -103,6 +125,7 @@ const Rutinas = () => {
     setNewRoutineDescription('');
     setRepeatDays('diario'); // Reiniciar selección de días
     setSendNotification(false); // Reiniciar estado de notificación
+    setSelectedTime(""); 
     setSelectedRoutine(null);
     setModalVisible(false);
   };
@@ -119,6 +142,7 @@ const Rutinas = () => {
     setNewRoutine(routine.name);
     setNewRoutineDescription(routine.description);
     setRepeatDays(routine.repeatDays || ''); // Asegúrate de establecer el valor predeterminado si está vacío
+    setSelectedTime(routine.selectedTime || "");
     setSendNotification(routine.sendNotification || false); // Establece el valor del switch
     setSelectedRoutine(routine);
     setModalVisible(true);
@@ -161,7 +185,7 @@ const Rutinas = () => {
         renderItem={({ item }) => (
           <View style={styles.routineContainer}>
             <View>
-              <Text style={{ textDecorationLine: item.completed ? 'line-through' : 'none' }}>
+              <Text style={{fontWeight: 'bold',fontSize: 12, textDecorationLine: item.completed ? 'line-through' : 'none' }}>
                 {item.name}
               </Text>
               <Text style={styles.descriptionText}>{item.description}</Text>
@@ -171,6 +195,8 @@ const Rutinas = () => {
               <TouchableOpacity onPress={() => toggleRoutineComplete(item.id)}>
                 <Text style={styles.checkBoxText}>{item.completed ? '✓' : '☐'}</Text>
               </TouchableOpacity>
+
+            {/* Botones deslizables */}
 
               {/* Edit button */}
               <TouchableOpacity onPress={() => handleEditRoutine(item)} style={styles.actionButton}>
@@ -187,8 +213,8 @@ const Rutinas = () => {
         contentContainerStyle={styles.listContent}
       />
 
-      <View style={styles.bottomContainer}>
-        <TouchableOpacity onPress={() => setActivitySelectionVisible(true)} style={styles.button}>
+      <View style={styles.activiyButton}>
+        <TouchableOpacity onPress={() => setActivitySelectionVisible(true)} >
           <Text style={styles.buttonText}>Añadir nueva actividad +</Text>
         </TouchableOpacity>
       </View>
@@ -234,18 +260,18 @@ const Rutinas = () => {
               onPress={proceedToNextStep}
               disabled={!selectedOption}
               style={[
-                styles.modalButton,
+                styles.activiyButton,
                 !selectedOption && styles.disabledButton,
               ]}
             >
-              <Text style={styles.modalButtonText}>Siguiente</Text>
+              <Text style={styles.buttonText}>Siguiente</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => resetModal()}
-              style={[styles.modalButton, styles.cancelButton]}
+              style={[ styles.cancelButton]}
             >
-              <Text style={styles.modalButtonText}>Cancelar</Text>
+              <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -280,60 +306,81 @@ const Rutinas = () => {
             />
 
             {/* Campo para seleccionar días de repetición */}
-{/* Campo para seleccionar días de repetición */}
-<Text style={styles.label}>Repetir</Text>
-<View style={styles.repeatContainer}>
-  <Text style={styles.selectedOptionText}>
-    {repeatDays ? repeatDays.replace(/_/g, ' ') : 'Seleccionar días'}
-  </Text>
-  <TouchableOpacity onPress={() => setShowDaysOptions(true)}>
-    <Text style={styles.selectButton}>Seleccionar</Text>
-  </TouchableOpacity>
+
+            
+            <View style={styles.repeatContainer}>
+            <Text style={styles.label}>Repetir</Text>
+    <TouchableOpacity onPress={() => setShowDaysOptions(true)}>
+        <Text style={[styles.selectButton]}>
+            {repeatDays ? repeatDays.replace(/_/g, ' ') : 'Seleccionar días'} {'>'}
+        </Text>
+    </TouchableOpacity>
 </View>
 
 {/* Opciones de días */}
 {showDaysOptions && (
-  <View style={styles.optionsContainer}>
-    {opDays.map((option) => (
-      <TouchableOpacity
-        key={option}
-        onPress={() => {
-          setRepeatDays(option.toLowerCase().replace(/ /g, "_")); // Actualiza el estado
-          setShowDaysOptions(false); // Cierra las opciones
-        }}
-        style={[
-          styles.optionButton,
-          repeatDays === option.toLowerCase().replace(/ /g, "_") && styles.selectedOptionButton,
-        ]}
-      >
-        <Text style={styles.optionButtonText}>{option}</Text>
-      </TouchableOpacity>
-    ))}
-  </View>
+    <View style={styles.optionsContainer}>
+        {opDays.map((option) => (
+            <TouchableOpacity
+                key={option}
+                onPress={() => {
+                    setRepeatDays(option.toLowerCase().replace(/ /g, "_")); // Actualiza el estado
+                    setShowDaysOptions(false); // Cierra las opciones
+                }}
+                style={[
+                    styles.optionButton,
+                    repeatDays === option.toLowerCase().replace(/ /g, "_") && styles.selectedOptionButton,
+                ]}
+            >
+                <Text style={styles.optionButtonText}>{option}</Text>
+            </TouchableOpacity>
+        ))}
+    </View>
 )}
 
+        {/* Horarios de notificación */}
+        
+        <View style={styles.repeatContainer}>
+        <Text style={styles.label}>Horario</Text>
+        <TouchableOpacity onPress={showDatePicker} style={styles.timeButton}>
+    <Text style={styles.timeButtonText}>
+        {selectedTime ? `Seleccionar Hora: ${selectedTime}` : "Seleccionar Hora"}
+    </Text>
+</TouchableOpacity>
 
+          {/* Picker para la hora */}
+          <DateTimePickerModal
+            isVisible={isDatePickerVisible}
+            mode="time"
+            onConfirm={handleConfirm}
+            onCancel={hideDatePicker} // Cierra el picker
+          />
+    </View>
 
 
             {/* Campo de enviar notificación */}
-            <Text style={styles.label}>Enviar notificación</Text>
-            <Switch
-             value={sendNotification} // Enlazado al estado actual
-             onValueChange={setSendNotification}// Se actualiza el estado al cambiar
-            />
+            <View style={styles.repeatContainer}>
+                <Text style={styles.label}>Enviar notificación</Text>
+                <Switch
+                value={sendNotification} // Enlazado al estado actual
+                onValueChange={setSendNotification}// Se actualiza el estado al cambiar
+                />
+            </View>
 
-            <TouchableOpacity
+            {/* Botones guardar y cancelar */}
+
+            <TouchableOpacity 
               onPress={handleAddOrEditRoutine}
-              style={styles.modalButton}
+              style={styles.activiyButton}
             >
-              <Text style={styles.modalButtonText}>Guardar</Text>
+              <Text style={styles.buttonText}>Guardar Actividad</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={resetModal}
-              style={[styles.modalButton, styles.cancelButton]}
+              style={[styles.cancelButton]}
             >
-              <Text style={styles.modalButtonText}>Cancelar</Text>
+              <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -341,232 +388,208 @@ const Rutinas = () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
+    // Contenedor principal de la aplicación
     container: {
-        flex: 1,
-        backgroundColor: '#90E0EF',
-      },
-      currentDateText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginVertical: 10,
-        textAlign: 'center',
-      },
+      flex: 1,
+      backgroundColor: '#90E0EF', // Color de fondo
+    },
+    currentDateText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginVertical: 10,
+      textAlign: 'center', // Centrar el texto
+    },
 
-// MODAL
-
-modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '90%', // Ajustar el ancho del modal al 90% del ancho de la pantalla
-    maxWidth: 400, // Limitar el ancho máximo para pantallas grandes
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalButton: {
-    padding: 10,
-    backgroundColor: '#007BFF',
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10,
-    flex: 1,
-    marginHorizontal: 5,
-    paddingVertical: 15, // Aumentar el padding vertical
-  },
-
-
-
-      reservedSpace: {
+  
+    // Espacio reservado en la parte superior
+    reservedSpace: {
         height: 150,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#eaeaea',
         marginBottom: 10,
       },
+
+
+
+    
+    
+
+    //ItenListRoutine
     listContent: {
-      paddingTop: 10,
+      paddingTop: 10, // Espaciado superior para la lista
     },
     routineContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      padding: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: '#ddd',
+        flexDirection: 'row', // Mantiene el layout en fila
+        justifyContent: 'space-between', // Espacio entre los elementos
+        padding: 10, // Espaciado interno
+        borderBottomWidth: 1, // Línea de separación
+        borderBottomColor: '#ddd', // Color de la línea de separación
+        backgroundColor: '#5271FF', // Color de fondo
+        borderRadius: 10, // Bordes redondeados
+        marginBottom: 10, // Espacio entre elementos
+        fontWeight: 'bold',
     },
     descriptionText: {
       fontSize: 12,
-      color: 'gray',
+      color: 'black', // Color del texto de la descripción
     },
     routineActions: {
-      flexDirection: 'row',
+      flexDirection: 'row', // Disposición horizontal para acciones
       alignItems: 'center',
     },
-
-     
-      
+  
     checkBoxText: {
-      fontSize: 20,
+      fontSize: 20, // Tamaño del texto para el checkbox
       marginRight: 10,
     },
+
+
+
+    //Botones deslizables eliminar y editar
+
     actionButton: {
       marginLeft: 10,
       padding: 5,
-      backgroundColor: '#ddd',
+      backgroundColor: '#ddd', // Color de fondo del botón de acción
       borderRadius: 5,
     },
     deleteText: {
-      color: 'red',
+      color: 'red', // Color rojo para el texto de eliminar
     },
-    bottomContainer: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      padding: 10,
-      backgroundColor: '#90E0EF',
-      borderTopWidth: 1,
-      borderTopColor: '#ddd',
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    button: {
-      backgroundColor: '#03045E',
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 5,
-    },
-    buttonText: {
-      color: 'white',
-      fontWeight: 'bold',
-    },
-    
-     
-      label: {
-        fontSize: 16,
-        marginBottom: 5,
+
+
+
+
+    // Estilos para el modal
+    modalContent: {
+        backgroundColor: 'white', // Fondo blanco para el modal
+        padding: 20,
+        borderRadius: 10,
+        width: '90%', // Ancho del modal al 90% de la pantalla
+        maxWidth: 400, // Limitar el ancho máximo
       },
+      modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo semi-transparente
+      },
+      
+    
+    
+    
+    //Segundo modal
+    
+    label: {
+      fontSize: 16, // Tamaño de la etiqueta
+      marginBottom: 5,
+      flexDirection: 'row',
+      
+    },
     modalTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      marginBottom: 20,
+      marginBottom: 20, // Margen inferior para el título del modal
     },
     input: {
-        height: 40,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        borderRadius: 5,
-        marginBottom: 20,
-        paddingHorizontal: 10,
-        width: '100%',
-      },
+      height: 40,
+      borderColor: '#ccc', // Color del borde del input
+      borderWidth: 1,
+      borderRadius: 5,
+      marginBottom: 10,
+      paddingHorizontal: 10, // Espaciado interno
+      width: '100%', // Ancho completo
+    },
     
-      modalButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    modalButtons: {
+      flexDirection: 'row', // Disposición horizontal para botones
+      justifyContent: 'space-between',
+    },
+    
+    //Opciones de los select modals
+    
+    optionsContainer: {
+      flexDirection: 'row', // Disposición horizontal para opciones
+      flexWrap: 'wrap', // Permitir ajuste a múltiples líneas
+      justifyContent: 'center', // Centrar botones
+      marginVertical: 10,
+      width: '100%', // Ancho completo
+    },
+    optionButton: {
+      paddingVertical: 5, // Altura del botón de opción
+      paddingHorizontal: 10, // Ancho del botón de opción
+      backgroundColor: 'lightgray', // Color de fondo del botón de opción
+      borderRadius: 5,
+      margin: 5, // Margen alrededor de cada botón
+    },
+    optionButtonText: {
+      textAlign: 'center', // Centrar texto en el botón de opción
+    },
+    selectedOptionButton: {
+      backgroundColor: '#48C78E', // Color verde para selección
+    },
+    disabledButton: {
+      backgroundColor: '#ccc', // Color gris para botón deshabilitado
+    },
+  
+  
+    
+    
+    
+  
+    // Estilos para el contenedor de repetición
+    repeatContainer: {
+        flexDirection: 'row', // Distribuir en fila
+    justifyContent: 'space-between', // Espacio entre los elementos
+    alignItems: 'center', // Alinear verticalmente al centro
+    marginBottom: 15,
+    },
+    selectedOptionText: {
+      fontSize: 16, // Tamaño del texto seleccionado
+    },
+    selectButton: {
+      color: 'black', // Color del botón de selección
+    },
+  
+    // Estilos para el botón de hora seleccionada
+    timeButton: {
+      marginVertical: 10, // Espaciado vertical
+    },
+    timeButtonText: {
+      fontSize: 16, // Tamaño del texto en el botón de hora
+    },
+
+    //Boton para actividad SAVE
+    activiyButton: {
+        backgroundColor: '#16367B', // Color de fondo
+        width: 228, // Ancho del botón
+        height: 30, // Alto del botón
+        borderRadius: 5, // Puedes ajustar esto según el diseño deseado
+        justifyContent: 'center', // Centrar el contenido
+        alignItems: 'center', // Centrar el contenido
+        marginBottom: 10,
+        alignSelf: 'center',
       },
-      saveButton: {
-        padding: 10,
-        backgroundColor: '#007BFF',
-        borderRadius: 5,
-        flex: 1,
-        marginRight: 10,
-      },
-      saveButtonText: {
-        color: 'white',
-        textAlign: 'center',
+      buttonText: {
+        color: 'white', // Color del texto
+        fontWeight: 'bold', // Hacer el texto más audaz
+        textAlign: 'center', // Centrar texto
       },
       cancelButton: {
         padding: 10,
-        backgroundColor: 'gray',
+        backgroundColor: '#679FDB', // Color del botón de cancelar
         borderRadius: 5,
-        flex: 1,
-      },
-      cancelButtonText: {
-        color: 'white',
-        textAlign: 'center',
-      },
-    modalButtonText: {
-      color: 'white',
-    },
-    optionsContainer: {
-        flexDirection: 'row', // Cambia a fila
-        flexWrap: 'wrap', // Permite que los botones se ajusten a múltiples líneas
-        justifyContent: 'center', // Centra los botones
-        marginVertical: 10,
-        width: '100%',
-      },
-      optionButton: {
-        paddingVertical: 5, // Ajustar altura
-        paddingHorizontal: 10, // Ajustar ancho
-        backgroundColor: 'lightgray',
-        borderRadius: 5,
-        margin: 5, // Margen alrededor de cada botón
-      },
-    optionButtonText: {
-      textAlign: 'center',
-    },
-    selectedOptionButton: {
-      backgroundColor: '#48C78E', // Verde para selección
-    },
-    disabledButton: {
-      backgroundColor: '#ccc', // Gris para botón deshabilitado
-    },
-
-    //MODAL ADD OR EDIT ACTIVIDAD
-    daySelectorContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
+        width: 228, // Ancho del botón
+        height: 30, // Alto del botón
+        marginBottom: 5,
         justifyContent: 'center',
-        marginBottom: 15,
-      },
-      dayButton: {
-        backgroundColor: 'lightgray',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 20,
-        margin: 5,
-      },
-      selectedDayButton: {
-        backgroundColor: '#48C78E', // Cambia el color cuando está seleccionado
-      },
-      dayButtonText: {
-        color: 'white',
-        textAlign: 'center',
-      },
-      switchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 15,
+        alignSelf: 'center',
+        
       },
       
-
-
-      // DIAS SELECCIONADOS
-
-      repeatContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 15,
-      },
-      selectedOptionText: {
-        fontSize: 16,
-      },
-      selectButton: {
-        color: 'blue',
-      },
-      
-      
-
   });
-  
+    
   export default Rutinas;
 
