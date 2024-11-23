@@ -1,11 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import RoutineListScreen from './pantallas/rutinas'
+
+import Routinas from './components/rutinas';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <RoutineListScreen/>
+      <Routinas />
     </View>
   );
 }
@@ -13,10 +14,8 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#90E0EF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom:10,
-    marginTop:10,
   },
 });

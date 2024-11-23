@@ -1,0 +1,32 @@
+-- Tabla de usuarios
+CREATE TABLE usuarios (
+    id_usuario INT IDENTITY(1,1) PRIMARY KEY, -- AUTO_INCREMENT en SQL Server
+    nombre NVARCHAR(100) NOT NULL,
+    email NVARCHAR(150) UNIQUE NOT NULL,
+    contraseña NVARCHAR(255) NOT NULL
+);
+
+-- Tabla de actividades
+CREATE TABLE actividades (
+    id_actividad INT IDENTITY(1,1) PRIMARY KEY, -- AUTO_INCREMENT en SQL Server
+    id_usuario INT NOT NULL,
+    titulo NVARCHAR(100) NOT NULL,
+    descripcion NVARCHAR(MAX), -- Uso de NVARCHAR(MAX) para descripciones largas
+    color NVARCHAR(7) DEFAULT '#FFDE59',
+    repetir_dias NVARCHAR(50) DEFAULT 'Solo una vez',
+    hora TIME DEFAULT CAST(GETDATE() AS TIME),
+    enviar_notificacion BIT DEFAULT 0, -- Uso de BIT para valores booleanos en SQL Server
+    completada BIT DEFAULT 0, -- Uso de BIT para valores booleanos
+    fecha_creacion DATETIME DEFAULT GETDATE(), -- Fecha actual en SQL Server
+    CONSTRAINT FK_Actividades_Usuarios FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+);
+
+  -- Insertar un usuario
+INSERT INTO usuarios (nombre, email, contraseña) 
+VALUES (N'Christian', N'Christian@gmail.com', N'Christian123');
+
+-- Insertar actividades para el usuario
+INSERT INTO actividades (id_usuario, titulo, descripcion, color, repetir_dias, hora, enviar_notificacion, completada)
+VALUES 
+(1, N'Hacer ejercicio', N'Entrenar en el gimnasio', N'#D177E9', N'Lunes-Viernes', '07:00:00', 1, 0),
+(1, N'Leer un libro', N'Leer al menos 20 páginas', N'#FD71CA', N'Diario', NULL, '07:00:00',1, 0);
