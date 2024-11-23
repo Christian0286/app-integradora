@@ -28,7 +28,7 @@ const Rutinas = () => {
   const [hora, setHora] = useState('07:00:00');
   const [enviarNotificacion, setEnviarNotificacion] = useState(false);
 
-  const [nextId, setNextId] = useState<number>(1); 
+  const [nextId, setNextId] = useState(1); 
   const [newRoutine, setNewRoutine] = useState('');
   const [newRoutineDescription, setNewRoutineDescription] = useState('');
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -77,7 +77,7 @@ const Rutinas = () => {
   const handleAddOrEditRoutine = () => {
     if (newRoutine.trim() !== '') {
       const routineData: Routine = {
-        id: nextId,
+        id: selectedRoutine ? selectedRoutine.id : nextId,
         //id: selectedRoutine ? selectedRoutine.id : routines.length + 1,
         name: newRoutine,
         description: newRoutineDescription,
@@ -88,8 +88,18 @@ const Rutinas = () => {
         completed: false,
       };
 
-      setRoutines(selectedRoutine ? routines.map(r => (r.id === routineData.id ? routineData : r)) : [...routines, routineData]);
-      setNextId((prevId: number) => prevId + 1);
+      setRoutines(prevRoutines => 
+        selectedRoutine
+          ? prevRoutines.map(routine => 
+              routine.id === selectedRoutine.id ? routineData : routine // Reemplazamos la rutina editada
+            )
+          : [...prevRoutines, routineData] // Si no estamos editando, agregamos una nueva rutina
+      );
+  
+      // Actualizar el siguiente ID solo cuando se agrega una nueva rutina
+      if (!selectedRoutine) {
+        setNextId(prevId => prevId + 1); // Incrementamos nextId solo cuando estamos añadiendo una nueva rutina
+      }
       resetModal();
     }
   };
